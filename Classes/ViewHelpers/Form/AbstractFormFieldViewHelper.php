@@ -32,6 +32,7 @@ abstract class AbstractFormFieldViewHelper extends \TYPO3\Fluid\ViewHelpers\Form
 		parent::initializeArguments();
 		$this->registerArgument('name', 'string', 'Name of input tag');
 		$this->registerArgument('value', 'mixed', 'Value of input tag');
+		$this->registerArgument('startValue', 'mixed', 'Start value of input tag');
 		$this->registerArgument('property', 'string', 'Name of Object Property. If used in conjunction with <f:form object="...">, "name" and "value" properties will be ignored.');
 	}
 
@@ -86,14 +87,21 @@ abstract class AbstractFormFieldViewHelper extends \TYPO3\Fluid\ViewHelpers\Form
 	 */
 	protected function getValue($convertObjects = TRUE) {
 		$value = NULL;
+		
+		if ($this->isObjectAccessorMode()) {
+			$this->addAdditionalIdentityPropertiesIfNeeded();
+		}
+		
 		if ($this->hasArgument('value')) {
 			$value = $this->arguments['value'];
 		} elseif ($this->hasMappingErrorOccured()) {
 			$value = $this->getLastSubmittedFormData();
+		} elseif ($this->hasArgument('startValue')) {
+			$value = $this->arguments['startValue'];
 		} elseif ($this->isObjectAccessorMode() && $this->viewHelperVariableContainer->exists('TYPO3\Fluid\ViewHelpers\FormViewHelper', 'formObject')) {
-			$this->addAdditionalIdentityPropertiesIfNeeded();
 			$value = $this->getPropertyValue();
 		}
+		
 		if ($convertObjects && is_object($value)) {
 			$identifier = $this->persistenceManager->getIdentifierByObject($value);
 			if ($identifier !== NULL) {
