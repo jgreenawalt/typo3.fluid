@@ -87,7 +87,9 @@ class RadioViewHelper extends \TYPO3\Fluid\ViewHelpers\Form\AbstractFormFieldVie
 		$this->registerFieldNameForFormTokenGeneration($nameAttribute);
 		$this->tag->addAttribute('name', $nameAttribute);
 		$this->tag->addAttribute('value', $valueAttribute);
-		if ($checked) {
+
+		$checkedDueToLastSubmit = $this->hasMappingErrorOccured() && $valueAttribute == $this->getLastSubmittedFormData();
+		if ($checked || $checkedDueToLastSubmit) {
 			$this->tag->addAttribute('checked', 'checked');
 		}
 
