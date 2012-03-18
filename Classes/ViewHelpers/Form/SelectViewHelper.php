@@ -187,6 +187,13 @@ class SelectViewHelper extends \TYPO3\Fluid\ViewHelpers\Form\AbstractFormFieldVi
 				} elseif ($this->persistenceManager->getIdentifierByObject($value) !== NULL) {
 					$value = $this->persistenceManager->getIdentifierByObject($value);
 				}
+			} else if (is_array($value)) {
+				if ($this->hasArgument('optionValueField')) {
+					$key = \TYPO3\FLOW3\Reflection\ObjectAccess::getPropertyPath($value, $this->arguments['optionValueField']);
+				}
+				if ($this->hasArgument('optionLabelField')) {
+					$value = \TYPO3\FLOW3\Reflection\ObjectAccess::getPropertyPath($value, $this->arguments['optionLabelField']);
+				}
 			}
 			$options[$key] = $value;
 		}
