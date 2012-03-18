@@ -78,19 +78,18 @@ class CheckboxViewHelper extends \TYPO3\Fluid\ViewHelpers\Form\AbstractFormField
 		$nameAttribute = $this->getName();
 		$valueAttribute = $this->getValue();
 		if ($this->isObjectAccessorMode()) {
-			$propertyValue = $this->getPropertyValue();
-			if ($propertyValue instanceof \Traversable) {
-				$propertyValue = iterator_to_array($propertyValue);
-			}
-			if (is_array($propertyValue)) {
-				if ($checked === NULL) {
-					$checked = in_array($valueAttribute, $propertyValue);
+			$selectedValue = $this->getSelectedValues();
+			if ($checked === NULL) {
+				if (is_array($selectedValue)) {
+					$checked = in_array($valueAttribute, $selectedValue);
+				} elseif ($selectedValue !== NULL) {
+					$checked = ((boolean)$selectedValue === (boolean)$valueAttribute || $selectedValue == $valueAttribute);
 				}
+			}
+			
+			if (is_array($selectedValue) || $multiple === TRUE) {
 				$nameAttribute .= '[]';
-			} elseif ($multiple === TRUE) {
-				$nameAttribute .= '[]';
-			}elseif ($checked === NULL && $propertyValue !== NULL) {
-				$checked = (boolean)$propertyValue === (boolean)$valueAttribute;
+				$nameAttribute = preg_replace('/\[__identity\]\[\]$/', '[][__identity]', $nameAttribute);
 			}
 		}
 
@@ -103,8 +102,49 @@ class CheckboxViewHelper extends \TYPO3\Fluid\ViewHelpers\Form\AbstractFormField
 
 		$this->setErrorClassAttribute();
 
-		$hiddenField = $this->renderHiddenFieldForEmptyValue();
-		return $hiddenField . $this->tag->render();
+		//$hiddenField = $this->renderHiddenFieldForEmptyValue();
+		return $this->tag->render();
+	}
+
+	/**
+	 * Retrieves the selected value(s)
+	 *
+	 * @return mixed value string or an array of strings
+	 */
+	protected function getSelectedValues() {
+		$value = $this->getPropertyValue();
+		if (!$value) {
+			return NULL;
+		}
+		
+		if (!is_array($value) && !($value instanceof  \Traversable)) {
+			return $this->getOptionValueScalar($value);
+		}
+		$selectedValues = array();
+		foreach($value as $selectedValueElement) {
+			$selectedValues[] = $this->getOptionValueScalar($selectedValueElement);
+		}
+		return $selectedValues;
+	}
+
+	/**
+	 * Get the option value for an object
+	 *
+	 * @param mixed $valueElement
+	 * @return string
+	 */
+	protected function getOptionValueScalar($valueElement) {
+		if (is_object($valueElement)) {
+			if ($this->hasArgument('optionValueField')) {
+				return \TYPO3\FLOW3\Reflection\ObjectAccess::getPropertyPath($valueElement, $this->arguments['optionValueField']);
+			} else if ($this->persistenceManager->getIdentifierByObject($valueElement) !== NULL){
+				return $this->persistenceManager->getIdentifierByObject($valueElement);
+			} else {
+				return (string)$valueElement;
+			}
+		} else {
+			return $valueElement;
+		}
 	}
 }
 
